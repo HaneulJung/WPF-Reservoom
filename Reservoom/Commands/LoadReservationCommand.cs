@@ -1,4 +1,5 @@
 ﻿using Reservoom.Models;
+using Reservoom.Stores;
 using Reservoom.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -14,26 +15,32 @@ namespace Reservoom.Commands
     public class LoadReservationCommand : AsyncCommandBase
     {
         private readonly ReservationListingViewModel _viewModel;
-        private readonly Hotel _hotel;
+        private readonly HotelStore _hotelStore;
 
-        public LoadReservationCommand(ReservationListingViewModel viewModel, Hotel hotel)
+        public LoadReservationCommand(ReservationListingViewModel viewModel, HotelStore hotelStore)
         {
             _viewModel = viewModel;
-            _hotel = hotel;
+            _hotelStore = hotelStore;
         }
 
         public override async Task ExecuteAsync(object? parameter)
         {
+            _viewModel.ErrorMessage = string.Empty;
+            _viewModel.IsLoading = true;
+
             try
             {
-                IEnumerable<Reservation> reservations = await _hotel.GetAllReservations();
 
-                _viewModel.UpdateReservations(reservations);
+                await _hotelStore.Load();
+
+                _viewModel.UpdateReservations(_hotelStore.Reservations);
             }
             catch (Exception)
             {
-                MessageBox.Show("Failed to load reservation.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _viewModel.ErrorMessage = "Failed to load reservation.";
             }
+
+            _viewModel.IsLoading = false;
         }
     }
 }
